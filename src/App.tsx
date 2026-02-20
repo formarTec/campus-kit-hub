@@ -18,6 +18,7 @@ import Instrumentos from "@/pages/Instrumentos";
 import Estoque from "@/pages/Estoque";
 import Relatorios from "@/pages/Relatorios";
 import Notificacoes from "@/pages/Notificacoes";
+import Perfil from "@/pages/Perfil";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/estoque" element={<ProtectedRoute><Estoque /></ProtectedRoute>} />
           <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
           <Route path="/notificacoes" element={<ProtectedRoute><Notificacoes /></ProtectedRoute>} />
+          <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
   Monitor,
@@ -16,10 +16,12 @@ import {
   Menu,
   LogOut,
   FolderOpen,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -36,8 +38,14 @@ const navigation = [
   { name: "Notificações", href: "/notificacoes", icon: Bell },
 ];
 
-function SidebarContent({ collapsed, onToggle }: { collapsed: boolean; onToggle?: () => void }) {
+function SidebarContent({ collapsed, onToggle, onNavigate }: { collapsed: boolean; onToggle?: () => void; onNavigate?: () => void }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  }
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -70,6 +78,7 @@ function SidebarContent({ collapsed, onToggle }: { collapsed: boolean; onToggle?
             <Link
               key={item.name}
               to={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
                 isActive
@@ -85,8 +94,25 @@ function SidebarContent({ collapsed, onToggle }: { collapsed: boolean; onToggle?
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border p-3">
-        <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors">
+      <div className="border-t border-sidebar-border p-3 space-y-0.5">
+        <Link
+          to="/perfil"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+            location.pathname === "/perfil"
+              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          )}
+          title={collapsed ? "Meu Perfil" : undefined}
+        >
+          <UserCircle className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Meu Perfil</span>}
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+        >
           <LogOut className="h-4 w-4 shrink-0" />
           {!collapsed && <span>Sair</span>}
         </button>

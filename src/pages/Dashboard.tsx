@@ -13,13 +13,8 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const stats = [
-  { label: "Computadores", value: "0", icon: Monitor, href: "/computadores", color: "text-primary" },
-  { label: "Licenças", value: "0", icon: Key, href: "/licencas", color: "text-accent" },
-  { label: "Instrumentos", value: "0", icon: Music, href: "/instrumentos", color: "text-warning" },
-  { label: "Fornecedores", value: "0", icon: Users, href: "/fornecedores", color: "text-info" },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const quickActions = [
   { label: "Novo Computador", icon: Monitor, href: "/computadores", color: "bg-primary/10 text-primary" },
@@ -33,15 +28,57 @@ const quickActions = [
 ];
 
 export default function Dashboard() {
+  const { data: computerCount = 0 } = useQuery({
+    queryKey: ["computers_count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("computers").select("*", { count: "exact", head: true });
+      return count || 0;
+    },
+  });
+  const { data: licenseCount = 0 } = useQuery({
+    queryKey: ["licenses_count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("licenses").select("*", { count: "exact", head: true });
+      return count || 0;
+    },
+  });
+  const { data: instrumentCount = 0 } = useQuery({
+    queryKey: ["instruments_count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("instruments").select("*", { count: "exact", head: true });
+      return count || 0;
+    },
+  });
+  const { data: supplierCount = 0 } = useQuery({
+    queryKey: ["suppliers_count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("suppliers").select("*", { count: "exact", head: true });
+      return count || 0;
+    },
+  });
+
+  const { data: pendingMaintenance = 0 } = useQuery({
+    queryKey: ["pending_maintenance"],
+    queryFn: async () => {
+      const { data } = await supabase.from("maintenance_records").select("next_maintenance");
+      return (data || []).filter((m) => m.next_maintenance && new Date(m.next_maintenance).getTime() <= Date.now()).length;
+    },
+  });
+
+  const stats = [
+    { label: "Computadores", value: computerCount.toString(), icon: Monitor, href: "/computadores", color: "text-primary" },
+    { label: "Licenças", value: licenseCount.toString(), icon: Key, href: "/licencas", color: "text-accent" },
+    { label: "Instrumentos", value: instrumentCount.toString(), icon: Music, href: "/instrumentos", color: "text-warning" },
+    { label: "Fornecedores", value: supplierCount.toString(), icon: Users, href: "/fornecedores", color: "text-info" },
+  ];
+
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold lg:text-3xl">Dashboard</h1>
         <p className="mt-1 text-muted-foreground">Visão geral dos ativos e recursos da instituição</p>
       </div>
 
-      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link key={stat.label} to={stat.href} className="stat-card group">
@@ -57,46 +94,34 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Alerts & Quick Actions */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Alerts */}
         <div className="lg:col-span-1 space-y-4">
           <h2 className="text-lg font-semibold">Alertas</h2>
           <div className="glass-card rounded-xl p-5 space-y-3">
-            <div className="flex items-start gap-3 rounded-lg bg-warning/10 p-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 text-warning shrink-0" />
+            <div className={`flex items-start gap-3 rounded-lg p-3 ${pendingMaintenance > 0 ? "bg-warning/10" : "bg-success/10"}`}>
+              {pendingMaintenance > 0 ? <AlertTriangle className="mt-0.5 h-4 w-4 text-warning shrink-0" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 text-success shrink-0" />}
               <div>
-                <p className="text-sm font-medium">Manutenções pendentes</p>
-                <p className="text-xs text-muted-foreground">Nenhuma manutenção programada</p>
+                <p className="text-sm font-medium">Manutenções</p>
+                <p className="text-xs text-muted-foreground">
+                  {pendingMaintenance > 0 ? `${pendingMaintenance} manutenção(ões) pendente(s)` : "Todas em dia"}
+                </p>
               </div>
             </div>
-            <div className="flex items-start gap-3 rounded-lg bg-success/10 p-3">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 text-success shrink-0" />
-              <div>
-                <p className="text-sm font-medium">Sistema operacional</p>
-                <p className="text-xs text-muted-foreground">Todos os serviços funcionando</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 rounded-lg bg-info/10 p-3">
+            <Link to="/notificacoes" className="flex items-start gap-3 rounded-lg bg-info/10 p-3 hover:bg-info/20 transition-colors">
               <Bell className="mt-0.5 h-4 w-4 text-info shrink-0" />
               <div>
                 <p className="text-sm font-medium">Notificações</p>
-                <p className="text-xs text-muted-foreground">Nenhuma notificação pendente</p>
+                <p className="text-xs text-muted-foreground">Ver todas as notificações</p>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="lg:col-span-2 space-y-4">
           <h2 className="text-lg font-semibold">Acesso Rápido</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {quickActions.map((action) => (
-              <Link
-                key={action.label}
-                to={action.href}
-                className="module-card flex flex-col items-center gap-3 text-center"
-              >
+              <Link key={action.label} to={action.href} className="module-card flex flex-col items-center gap-3 text-center">
                 <div className={`rounded-xl p-3 ${action.color}`}>
                   <action.icon className="h-5 w-5" />
                 </div>
