@@ -169,6 +169,7 @@ export type Database = {
           loan_date: string
           notes: string | null
           student_contact: string | null
+          student_id: string | null
           student_name: string
         }
         Insert: {
@@ -180,6 +181,7 @@ export type Database = {
           loan_date?: string
           notes?: string | null
           student_contact?: string | null
+          student_id?: string | null
           student_name: string
         }
         Update: {
@@ -191,6 +193,7 @@ export type Database = {
           loan_date?: string
           notes?: string | null
           student_contact?: string | null
+          student_id?: string | null
           student_name?: string
         }
         Relationships: [
@@ -199,6 +202,13 @@ export type Database = {
             columns: ["instrument_id"]
             isOneToOne: false
             referencedRelation: "instruments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrument_loans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -376,6 +386,45 @@ export type Database = {
           full_name?: string | null
           id?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          created_at: string
+          email: string | null
+          enrollment_date: string | null
+          id: string
+          instrument: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          enrollment_date?: string | null
+          id?: string
+          instrument?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          enrollment_date?: string | null
+          id?: string
+          instrument?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
