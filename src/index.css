@@ -117,14 +117,28 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm;
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm rounded-xl;
   }
 
   .stat-card {
-    @apply glass-card rounded-xl p-5 transition-all duration-200 hover:shadow-md hover:border-primary/20;
+    @apply glass-card p-5 transition-all duration-200 hover:shadow-md hover:border-primary/20;
   }
 
   .module-card {
-    @apply glass-card rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer;
+    @apply glass-card p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer;
+  }
+
+  /* Smooth scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
   }
 }
