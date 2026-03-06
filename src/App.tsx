@@ -21,13 +21,17 @@ import Relatorios from "@/pages/Relatorios";
 import Notificacoes from "@/pages/Notificacoes";
 import Perfil from "@/pages/Perfil";
 import NotFound from "@/pages/NotFound";
+import { NotificationBanner } from "@/components/NotificationBanner";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <AppLayout>{children}</AppLayout>
+      <AppLayout>
+        <NotificationBanner />
+        {children}
+      </AppLayout>
     </AuthGuard>
   );
 }
