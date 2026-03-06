@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
       },
+      injectManifest: undefined,
+      manifestFilename: "manifest.webmanifest",
       manifest: {
         name: "TI Manager - Gestão de Ativos",
         short_name: "TI Manager",
