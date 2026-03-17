@@ -43,14 +43,6 @@ export default function Manutencoes() {
     },
   });
 
-  const { data: instruments = [] } = useQuery({
-    queryKey: ["instruments"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("instruments").select("id, name").order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const save = useMutation({
     mutationFn: async () => {
