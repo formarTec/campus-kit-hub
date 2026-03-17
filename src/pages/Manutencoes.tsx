@@ -22,7 +22,7 @@ export default function Manutencoes() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
-    computer_id: "", instrument_id: "", last_maintenance: "", next_maintenance: "", notes: "",
+    computer_id: "", last_maintenance: "", next_maintenance: "", notes: "",
   });
 
   const { data: records = [], isLoading } = useQuery({
@@ -43,20 +43,11 @@ export default function Manutencoes() {
     },
   });
 
-  const { data: instruments = [] } = useQuery({
-    queryKey: ["instruments"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("instruments").select("id, name").order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
         computer_id: form.computer_id || null,
-        instrument_id: form.instrument_id || null,
         last_maintenance: form.last_maintenance || null,
         next_maintenance: form.next_maintenance || null,
         notes: form.notes || null,
@@ -92,7 +83,7 @@ export default function Manutencoes() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ computer_id: "", instrument_id: "", last_maintenance: "", next_maintenance: "", notes: "" });
+    setForm({ computer_id: "", last_maintenance: "", next_maintenance: "", notes: "" });
     setDialogOpen(true);
   }
 
@@ -100,7 +91,6 @@ export default function Manutencoes() {
     setEditingId(r.id);
     setForm({
       computer_id: r.computer_id ?? "",
-      instrument_id: r.instrument_id ?? "",
       last_maintenance: r.last_maintenance ?? "",
       next_maintenance: r.next_maintenance ?? "",
       notes: r.notes ?? "",
@@ -169,15 +159,6 @@ export default function Manutencoes() {
                 <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
                 <SelectContent>
                   {computers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Instrumento</Label>
-              <Select value={form.instrument_id} onValueChange={(v) => setField("instrument_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
-                <SelectContent>
-                  {instruments.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

@@ -44,7 +44,7 @@ export default function Instrumentos() {
     name: "", type: "instrumento", brand: "", model: "", serial_number: "", status: "disponivel", notes: "",
   });
   const [loanForm, setLoanForm] = useState({
-    instrument_id: "", student_name: "", student_contact: "", loan_date: "", expected_return: "", actual_return: "", notes: "",
+    instrument_id: "", student_id: "", student_name: "", student_contact: "", loan_date: "", expected_return: "", actual_return: "", notes: "",
   });
 
   const { data: instruments = [], isLoading } = useQuery({
@@ -56,26 +56,30 @@ export default function Instrumentos() {
     },
   });
 
-  const { data: loans = [], isLoading: loansLoading } = useQuery({
-    queryKey: ["instrument_loans"],
+  const { data: students = [] } = useQuery({
+    queryKey: ["students_active"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("instrument_loans").select("*, instruments(name)").order("loan_date", { ascending: false });
+      const { data, error } = await supabase.from("students").select("id, name").eq("status", "ativo").order("name");
       if (error) throw error;
       return data;
     },
   });
 
-  // Instrument mutations
+  const { data: loans = [], isLoading: loansLoading } = useQuery({
+    queryKey: ["instrument_loans"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("instrument_loans").select("*, instruments(name), students(name)").order("loan_date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const saveInstrument = useMutation({
     mutationFn: async () => {
       const payload = {
-        name: form.name,
-        type: form.type as any,
-        brand: form.brand || null,
-        model: form.model || null,
-        serial_number: form.serial_number || null,
-        status: form.status as any,
-        notes: form.notes || null,
+        name: form.name, type: form.type as any, brand: form.brand || null,
+        model: form.model || null, serial_number: form.serial_number || null,
+        status: form.status as any, notes: form.notes || null,
       };
       if (editingId) {
         const { error } = await supabase.from("instruments").update(payload).eq("id", editingId);
@@ -85,20 +89,17 @@ export default function Instrumentos() {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["instruments"] });
-      setDialogOpen(false);
-      toast({ title: editingId ? "Instrumento atualizado!" : "Instrumento cadastrado!" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["instruments"] }); setDialogOpen(false); toast({ title: editingId ? "Instrumento atualizado!" : "Instrumento cadastrado!" }); },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  // Loan mutations
   const saveLoan = useMutation({
     mutationFn: async () => {
+      const selectedStudent = students.find(s => s.id === loanForm.student_id);
       const payload = {
         instrument_id: loanForm.instrument_id,
-        student_name: loanForm.student_name,
+        student_id: loanForm.student_id || null,
+        student_name: selectedStudent?.name || loanForm.student_name,
         student_contact: loanForm.student_contact || null,
         loan_date: loanForm.loan_date || new Date().toISOString().split("T")[0],
         expected_return: loanForm.expected_return || null,
@@ -113,37 +114,19 @@ export default function Instrumentos() {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["instrument_loans"] });
-      setLoanDialogOpen(false);
-      toast({ title: editingLoanId ? "Empréstimo atualizado!" : "Empréstimo registrado!" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["instrument_loans"] }); setLoanDialogOpen(false); toast({ title: editingLoanId ? "Empréstimo atualizado!" : "Empréstimo registrado!" }); },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   const removeInstrument = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("instruments").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["instruments"] });
-      setDeleteId(null);
-      toast({ title: "Instrumento removido!" });
-    },
+    mutationFn: async (id: string) => { const { error } = await supabase.from("instruments").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["instruments"] }); setDeleteId(null); toast({ title: "Instrumento removido!" }); },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   const removeLoan = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("instrument_loans").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["instrument_loans"] });
-      setDeleteLoanId(null);
-      toast({ title: "Empréstimo removido!" });
-    },
+    mutationFn: async (id: string) => { const { error } = await supabase.from("instrument_loans").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["instrument_loans"] }); setDeleteLoanId(null); toast({ title: "Empréstimo removido!" }); },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
@@ -161,20 +144,16 @@ export default function Instrumentos() {
 
   function openCreateLoan() {
     setEditingLoanId(null);
-    setLoanForm({ instrument_id: "", student_name: "", student_contact: "", loan_date: new Date().toISOString().split("T")[0], expected_return: "", actual_return: "", notes: "" });
+    setLoanForm({ instrument_id: "", student_id: "", student_name: "", student_contact: "", loan_date: new Date().toISOString().split("T")[0], expected_return: "", actual_return: "", notes: "" });
     setLoanDialogOpen(true);
   }
 
   function openEditLoan(l: any) {
     setEditingLoanId(l.id);
     setLoanForm({
-      instrument_id: l.instrument_id,
-      student_name: l.student_name,
-      student_contact: l.student_contact ?? "",
-      loan_date: l.loan_date,
-      expected_return: l.expected_return ?? "",
-      actual_return: l.actual_return ?? "",
-      notes: l.notes ?? "",
+      instrument_id: l.instrument_id, student_id: l.student_id ?? "", student_name: l.student_name,
+      student_contact: l.student_contact ?? "", loan_date: l.loan_date,
+      expected_return: l.expected_return ?? "", actual_return: l.actual_return ?? "", notes: l.notes ?? "",
     });
     setLoanDialogOpen(true);
   }
@@ -248,7 +227,7 @@ export default function Instrumentos() {
                   <TableRow>
                     <TableHead>Instrumento</TableHead>
                     <TableHead>Aluno</TableHead>
-                    <TableHead className="hidden md:table-cell">Data</TableHead>
+                    <TableHead className="hidden md:table-cell">Empréstimo</TableHead>
                     <TableHead className="hidden md:table-cell">Devolução</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-24">Ações</TableHead>
@@ -258,7 +237,7 @@ export default function Instrumentos() {
                   {loans.map((l: any) => (
                     <TableRow key={l.id}>
                       <TableCell className="font-medium">{l.instruments?.name || "—"}</TableCell>
-                      <TableCell>{l.student_name}</TableCell>
+                      <TableCell>{l.students?.name || l.student_name}</TableCell>
                       <TableCell className="hidden md:table-cell">{format(new Date(l.loan_date), "dd/MM/yyyy")}</TableCell>
                       <TableCell className="hidden md:table-cell">{l.expected_return ? format(new Date(l.expected_return), "dd/MM/yyyy") : "—"}</TableCell>
                       <TableCell>
@@ -328,26 +307,38 @@ export default function Instrumentos() {
             <div className="space-y-2">
               <Label>Instrumento *</Label>
               <Select value={loanForm.instrument_id} onValueChange={(v) => setLoanField("instrument_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione o instrumento" /></SelectTrigger>
                 <SelectContent>
                   {instruments.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Nome do Aluno *</Label><Input required value={loanForm.student_name} onChange={(e) => setLoanField("student_name", e.target.value)} /></div>
-            <div className="space-y-2"><Label>Contato do Aluno</Label><Input value={loanForm.student_contact} onChange={(e) => setLoanField("student_contact", e.target.value)} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Data do Empréstimo</Label><Input type="date" value={loanForm.loan_date} onChange={(e) => setLoanField("loan_date", e.target.value)} /></div>
-              <div className="space-y-2"><Label>Devolução Prevista</Label><Input type="date" value={loanForm.expected_return} onChange={(e) => setLoanField("expected_return", e.target.value)} /></div>
+            <div className="space-y-2">
+              <Label>Aluno *</Label>
+              <Select value={loanForm.student_id} onValueChange={(v) => {
+                setLoanField("student_id", v);
+                const s = students.find(s => s.id === v);
+                if (s) setLoanField("student_name", s.name);
+              }}>
+                <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
+                <SelectContent>
+                  {students.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2"><Label>Data de Devolução Real</Label><Input type="date" value={loanForm.actual_return} onChange={(e) => setLoanField("actual_return", e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Data do Empréstimo *</Label><Input type="date" required value={loanForm.loan_date} onChange={(e) => setLoanField("loan_date", e.target.value)} /></div>
+              <div className="space-y-2"><Label>Data de Retorno</Label><Input type="date" value={loanForm.expected_return} onChange={(e) => setLoanField("expected_return", e.target.value)} /></div>
+            </div>
+            {editingLoanId && (
+              <div className="space-y-2"><Label>Data de Devolução Real</Label><Input type="date" value={loanForm.actual_return} onChange={(e) => setLoanField("actual_return", e.target.value)} /></div>
+            )}
             <div className="space-y-2"><Label>Observações</Label><Textarea value={loanForm.notes} onChange={(e) => setLoanField("notes", e.target.value)} /></div>
             <DialogFooter><Button type="submit" disabled={saveLoan.isPending}>{saveLoan.isPending ? "Salvando..." : "Salvar"}</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Delete instrument */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Confirmar exclusão</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
@@ -358,7 +349,6 @@ export default function Instrumentos() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete loan */}
       <AlertDialog open={!!deleteLoanId} onOpenChange={() => setDeleteLoanId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Confirmar exclusão</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>

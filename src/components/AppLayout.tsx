@@ -5,6 +5,7 @@ import {
   Music, GraduationCap, Package, BarChart3, Bell,
   LayoutDashboard, ChevronLeft, ChevronRight, Menu,
   LogOut, FolderOpen, UserCircle, ChevronDown,
+  BookOpen, ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,8 @@ const menuGroups = [
     items: [
       { name: "Instrumentos", href: "/instrumentos", icon: Music },
       { name: "Alunos", href: "/alunos", icon: GraduationCap },
+      { name: "Aulas", href: "/aulas", icon: BookOpen },
+      { name: "Chamada", href: "/chamada", icon: ClipboardCheck },
     ],
   },
   {
