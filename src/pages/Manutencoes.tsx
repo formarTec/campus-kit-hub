@@ -22,7 +22,7 @@ export default function Manutencoes() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
-    computer_id: "", instrument_id: "", last_maintenance: "", next_maintenance: "", notes: "",
+    computer_id: "", last_maintenance: "", next_maintenance: "", notes: "",
   });
 
   const { data: records = [], isLoading } = useQuery({
