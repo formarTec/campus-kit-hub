@@ -16,6 +16,8 @@ import Financeiro from "@/pages/Financeiro";
 import Manutencoes from "@/pages/Manutencoes";
 import Instrumentos from "@/pages/Instrumentos";
 import Alunos from "@/pages/Alunos";
+import Aulas from "@/pages/Aulas";
+import Chamada from "@/pages/Chamada";
 import Estoque from "@/pages/Estoque";
 import Relatorios from "@/pages/Relatorios";
 import Notificacoes from "@/pages/Notificacoes";
@@ -54,6 +56,8 @@ const App = () => (
           <Route path="/manutencoes" element={<ProtectedRoute><Manutencoes /></ProtectedRoute>} />
           <Route path="/instrumentos" element={<ProtectedRoute><Instrumentos /></ProtectedRoute>} />
           <Route path="/alunos" element={<ProtectedRoute><Alunos /></ProtectedRoute>} />
+          <Route path="/aulas" element={<ProtectedRoute><Aulas /></ProtectedRoute>} />
+          <Route path="/chamada" element={<ProtectedRoute><Chamada /></ProtectedRoute>} />
           <Route path="/estoque" element={<ProtectedRoute><Estoque /></ProtectedRoute>} />
           <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
           <Route path="/notificacoes" element={<ProtectedRoute><Notificacoes /></ProtectedRoute>} />

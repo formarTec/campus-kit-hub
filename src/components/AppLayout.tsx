@@ -43,6 +43,8 @@ const menuGroups = [
     items: [
       { name: "Instrumentos", href: "/instrumentos", icon: Music },
       { name: "Alunos", href: "/alunos", icon: GraduationCap },
+      { name: "Aulas", href: "/aulas", icon: BookOpen },
+      { name: "Chamada", href: "/chamada", icon: ClipboardCheck },
     ],
   },
   {
