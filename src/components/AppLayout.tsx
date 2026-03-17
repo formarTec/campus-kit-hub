@@ -5,6 +5,7 @@ import {
   Music, GraduationCap, Package, BarChart3, Bell,
   LayoutDashboard, ChevronLeft, ChevronRight, Menu,
   LogOut, FolderOpen, UserCircle, ChevronDown,
+  BookOpen, ClipboardCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
