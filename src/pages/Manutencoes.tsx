@@ -56,7 +56,6 @@ export default function Manutencoes() {
     mutationFn: async () => {
       const payload = {
         computer_id: form.computer_id || null,
-        instrument_id: form.instrument_id || null,
         last_maintenance: form.last_maintenance || null,
         next_maintenance: form.next_maintenance || null,
         notes: form.notes || null,
