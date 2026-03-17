@@ -162,15 +162,6 @@ export default function Manutencoes() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Instrumento</Label>
-              <Select value={form.instrument_id} onValueChange={(v) => setField("instrument_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
-                <SelectContent>
-                  {instruments.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Última Manutenção</Label><Input type="date" value={form.last_maintenance} onChange={(e) => setField("last_maintenance", e.target.value)} /></div>
               <div className="space-y-2"><Label>Próxima Manutenção</Label><Input type="date" value={form.next_maintenance} onChange={(e) => setField("next_maintenance", e.target.value)} /></div>
