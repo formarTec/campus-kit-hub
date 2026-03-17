@@ -91,7 +91,7 @@ export default function Manutencoes() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ computer_id: "", instrument_id: "", last_maintenance: "", next_maintenance: "", notes: "" });
+    setForm({ computer_id: "", last_maintenance: "", next_maintenance: "", notes: "" });
     setDialogOpen(true);
   }
 
