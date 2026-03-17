@@ -99,7 +99,6 @@ export default function Manutencoes() {
     setEditingId(r.id);
     setForm({
       computer_id: r.computer_id ?? "",
-      instrument_id: r.instrument_id ?? "",
       last_maintenance: r.last_maintenance ?? "",
       next_maintenance: r.next_maintenance ?? "",
       notes: r.notes ?? "",
