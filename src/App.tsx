@@ -18,6 +18,7 @@ import Instrumentos from "@/pages/Instrumentos";
 import Alunos from "@/pages/Alunos";
 import Aulas from "@/pages/Aulas";
 import Chamada from "@/pages/Chamada";
+import ChamadaLancar from "@/pages/ChamadaLancar";
 import Estoque from "@/pages/Estoque";
 import Relatorios from "@/pages/Relatorios";
 import Notificacoes from "@/pages/Notificacoes";
