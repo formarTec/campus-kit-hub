@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => {
-  const base = process.env.VITE_BASE_URL || "/campus-kit-hub/";
+  const base = process.env.VITE_BASE_URL || "/";
 
   return {
     base,
