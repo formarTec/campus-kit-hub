@@ -5,8 +5,10 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => {
- 
+  const base = process.env.VITE_BASE_URL || "/campus-kit-hub/";
+
   return {
+    base,
     server: {
       host: "::",
       port: 8080,
@@ -34,11 +36,13 @@ export default defineConfig(({ mode }) => {
           background_color: "#0f0f1a",
           display: "standalone",
           orientation: "portrait",
+          scope: base,
+          start_url: base,
           icons: [
-          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
-          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
-          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-        ],
+            { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+            { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+            { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          ],
       },
     }),
   ].filter(Boolean),
