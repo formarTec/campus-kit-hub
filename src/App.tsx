@@ -44,7 +44,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <HashRouter basename={import.meta.env.VITE_BASE_URL || "/"}>
+      <HashRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
