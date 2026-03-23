@@ -5,7 +5,8 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => {
-  const base = process.env.VITE_BASE_URL || "/";
+  const autoBase = process.env.GITHUB_REPOSITORY?.endsWith("/formartec.github.io") ? "/" : "/campus-kit-hub/";
+  const base = process.env.VITE_BASE_URL || autoBase;
 
   return {
     base,
