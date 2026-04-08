@@ -12,17 +12,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+
+interface Computer {
+  id: string;
+  name: string;
+  building_id?: string;
+  location?: string;
+  hardware_specs?: string;
+  software_specs?: string;
+  ip_address?: string;
+  acquisition_type?: string;
+  value?: number;
+  in_use?: boolean;
+  buildings?: { name: string };
+}
+
+interface MaintenanceRecord {
+  id: string;
+  computer_id?: string;
+  last_maintenance?: string;
+  next_maintenance?: string;
+  notes?: string;
+  created_at: string;
+}
 
 export default function Computadores() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", hardware_specs: "", software_specs: "", ip_address: "",
-    acquisition_type: "", location: "", building_id: "",
+    acquisition_type: "", location: "", building_id: "", value: "", in_use: false,
   });
 
   const { data: computers = [], isLoading } = useQuery({
@@ -43,6 +69,17 @@ export default function Computadores() {
     },
   });
 
+  const { data: maintenanceHistory = [] } = useQuery({
+    queryKey: ["maintenance", editingId],
+    queryFn: async () => {
+      if (!editingId) return [];
+      const { data, error } = await supabase.from("maintenance_records").select("*").eq("computer_id", editingId).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!editingId,
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -53,6 +90,8 @@ export default function Computadores() {
         acquisition_type: form.acquisition_type || null,
         location: form.location || null,
         building_id: form.building_id || null,
+        value: form.value ? parseFloat(form.value) : null,
+        in_use: form.in_use,
       };
       if (editingId) {
         const { error } = await supabase.from("computers").update(payload).eq("id", editingId);
@@ -65,7 +104,7 @@ export default function Computadores() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["computers"] });
       setDialogOpen(false);
-      toast({ title: editingId ? "Computador atualizado!" : "Computador cadastrado!" });
+      toast({ title: editingId ? "Equipamento atualizado!" : "Equipamento cadastrado!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
@@ -78,18 +117,18 @@ export default function Computadores() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["computers"] });
       setDeleteId(null);
-      toast({ title: "Computador removido!" });
+      toast({ title: "Equipamento removido!" });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   function openCreate() {
     setEditingId(null);
-    setForm({ name: "", hardware_specs: "", software_specs: "", ip_address: "", acquisition_type: "", location: "", building_id: "" });
+    setForm({ name: "", hardware_specs: "", software_specs: "", ip_address: "", acquisition_type: "", location: "", building_id: "", value: "", in_use: false });
     setDialogOpen(true);
   }
 
-  function openEdit(c: any) {
+  function openEdit(c: Computer) {
     setEditingId(c.id);
     setForm({
       name: c.name,
@@ -99,6 +138,8 @@ export default function Computadores() {
       acquisition_type: c.acquisition_type ?? "",
       location: c.location ?? "",
       building_id: c.building_id ?? "",
+      value: c.value ? String(c.value) : "",
+      in_use: c.in_use ?? false,
     });
     setDialogOpen(true);
   }
@@ -107,12 +148,12 @@ export default function Computadores() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Computadores" description="Gerencie os computadores e suas especificações" icon={<Monitor className="h-5 w-5" />} onAdd={openCreate} addLabel="Novo Computador" />
+      <PageHeader title="Equipamentos" description="Gerencie os equipamentos e suas especificações" icon={<Monitor className="h-5 w-5" />} onAdd={openCreate} addLabel="Novo Equipamento" />
 
       {isLoading ? (
         <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>
       ) : computers.length === 0 ? (
-        <EmptyState icon={<Monitor className="h-6 w-6" />} title="Nenhum computador cadastrado" description="Cadastre os computadores da instituição." action={<Button onClick={openCreate}>Cadastrar Computador</Button>} />
+        <EmptyState icon={<Monitor className="h-6 w-6" />} title="Nenhum equipamento cadastrado" description="Cadastre os equipamentos da instituição." action={<Button onClick={openCreate}>Cadastrar Equipamento</Button>} />
       ) : (
         <div className="glass-card rounded-xl overflow-hidden">
           <Table>
@@ -127,7 +168,7 @@ export default function Computadores() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {computers.map((c: any) => (
+              {computers.map((c: Computer) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell className="hidden md:table-cell">{c.buildings?.name || "—"}</TableCell>
@@ -150,37 +191,92 @@ export default function Computadores() {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editingId ? "Editar Computador" : "Novo Computador"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-            <div className="space-y-2"><Label>Nome da Máquina (Setor) *</Label><Input required value={form.name} onChange={(e) => setField("name", e.target.value)} /></div>
-            <div className="space-y-2">
-              <Label>Prédio / Sede</Label>
-              <Select value={form.building_id} onValueChange={(v) => setField("building_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {buildings.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2"><Label>Especificação de Hardware</Label><Textarea value={form.hardware_specs} onChange={(e) => setField("hardware_specs", e.target.value)} placeholder="Processador, RAM, HD..." /></div>
-            <div className="space-y-2"><Label>Especificação de Softwares</Label><Textarea value={form.software_specs} onChange={(e) => setField("software_specs", e.target.value)} placeholder="Windows 11, Office 365..." /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>IP Atribuído</Label><Input value={form.ip_address} onChange={(e) => setField("ip_address", e.target.value)} placeholder="192.168.0.1" /></div>
-              <div className="space-y-2">
-                <Label>Tipo de Aquisição</Label>
-                <Select value={form.acquisition_type} onValueChange={(v) => setField("acquisition_type", v)}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="comprado">Comprado</SelectItem>
-                    <SelectItem value="doado">Doado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2"><Label>Local da Máquina</Label><Input value={form.location} onChange={(e) => setField("location", e.target.value)} placeholder="Sala 201, Lab 3..." /></div>
-            <DialogFooter><Button type="submit" disabled={save.isPending}>{save.isPending ? "Salvando..." : "Salvar"}</Button></DialogFooter>
-          </form>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader><DialogTitle className="text-xl">{editingId ? "Editar Equipamento" : "Novo Equipamento"}</DialogTitle></DialogHeader>
+          <Tabs defaultValue="dados" className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="dados">Informações</TabsTrigger>
+              <TabsTrigger value="manutencao">Histórico de Manutenção</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dados" className="flex-1 overflow-y-auto">
+              <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-6 pr-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Nome da Máquina (Setor) *</Label><Input required value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="Ex: PC Administração 01" /></div>
+                  <div className="space-y-2">
+                    <Label>Prédio / Sede</Label>
+                    <Select value={form.building_id} onValueChange={(v) => setField("building_id", v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        {buildings.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2"><Label>Especificação de Hardware</Label><Textarea value={form.hardware_specs} onChange={(e) => setField("hardware_specs", e.target.value)} placeholder="Processador, RAM, HD..." className="min-h-[100px]" /></div>
+                <div className="space-y-2"><Label>Especificação de Softwares</Label><Textarea value={form.software_specs} onChange={(e) => setField("software_specs", e.target.value)} placeholder="Windows 11, Office 365..." className="min-h-[100px]" /></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>IP Atribuído</Label><Input value={form.ip_address} onChange={(e) => setField("ip_address", e.target.value)} placeholder="192.168.0.1" /></div>
+                  <div className="space-y-2">
+                    <Label>Tipo de Aquisição</Label>
+                    <Select value={form.acquisition_type} onValueChange={(v) => setField("acquisition_type", v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="comprado">Comprado</SelectItem>
+                        <SelectItem value="doado">Doado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2"><Label>Local da Máquina</Label><Input value={form.location} onChange={(e) => setField("location", e.target.value)} placeholder="Sala 201, Lab 3..." /></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Valor (R$)</Label><Input type="number" step="0.01" value={form.value} onChange={(e) => setField("value", e.target.value)} placeholder="1500.00" /></div>
+                  <div className="space-y-2 flex items-center justify-between">
+                    <Label htmlFor="in_use">Em uso</Label>
+                    <Switch id="in_use" checked={form.in_use} onCheckedChange={(checked) => setForm((f) => ({ ...f, in_use: checked }))} />
+                  </div>
+                </div>
+                
+                <DialogFooter><Button type="submit" disabled={save.isPending}>{save.isPending ? "Salvando..." : "Salvar"}</Button></DialogFooter>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="manutencao" className="flex-1 overflow-y-auto">
+              {editingId ? (
+                <div className="pt-4 pr-4">
+                  {maintenanceHistory.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma manutenção registrada para este equipamento.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {maintenanceHistory.map((m: MaintenanceRecord) => (
+                        <div key={m.id} className="p-4 bg-muted rounded-lg border">
+                          <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                            <div>
+                              <span className="font-semibold">Última Manutenção:</span>
+                              <p className="text-foreground">{m.last_maintenance ? new Date(m.last_maintenance).toLocaleDateString('pt-BR') : 'N/A'}</p>
+                            </div>
+                            <div>
+                              <span className="font-semibold">Próxima Manutenção:</span>
+                              <p className="text-foreground">{m.next_maintenance ? new Date(m.next_maintenance).toLocaleDateString('pt-BR') : 'N/A'}</p>
+                            </div>
+                          </div>
+                          {m.notes && <p className="text-sm text-muted-foreground"><strong>Observações:</strong> {m.notes}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <p>Salve o equipamento para visualizar o histórico de manutenção</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

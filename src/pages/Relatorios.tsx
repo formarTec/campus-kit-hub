@@ -9,7 +9,7 @@ export default function Relatorios() {
   const { data: computers = [] } = useQuery({
     queryKey: ["computers"],
     queryFn: async () => {
-      const { data } = await supabase.from("computers").select("acquisition_type");
+      const { data } = await supabase.from("computers").select("acquisition_type, value");
       return data || [];
     },
   });
@@ -48,6 +48,7 @@ export default function Relatorios() {
 
   const comprados = computers.filter((c) => c.acquisition_type === "comprado").length;
   const doados = computers.filter((c) => c.acquisition_type === "doado").length;
+  const totalAtivos = computers.reduce((sum, c) => sum + (Number(c.value) || 0), 0);
   const totalLicenses = licenses.reduce((sum, l) => sum + (Number(l.purchase_price) || 0), 0);
   const mensais = licenses.filter((l) => l.payment_type === "mensal").length;
   const anuais = licenses.filter((l) => l.payment_type === "anual").length;
@@ -67,9 +68,10 @@ export default function Relatorios() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="stat-card">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Monitor className="h-4 w-4 text-primary" /> Computadores</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Monitor className="h-4 w-4 text-primary" /> Equipamentos</CardTitle></CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{computers.length}</p>
+            <p className="text-sm text-muted-foreground mt-1">Total investido: R$ {totalAtivos.toFixed(2)}</p>
             <div className="mt-2 flex gap-2 text-sm">
               <Badge variant="secondary">Comprados: {comprados}</Badge>
               <Badge variant="secondary">Doados: {doados}</Badge>

@@ -15,7 +15,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Estoque() {
-  const { data: computers = [] } = useQuery({
+  const { data: computers = [] } = useQuery<any[]>({
     queryKey: ["computers"],
     queryFn: async () => {
       const { data, error } = await supabase.from("computers").select("*, buildings(name)").order("name");
@@ -24,7 +24,7 @@ export default function Estoque() {
     },
   });
 
-  const { data: instruments = [] } = useQuery({
+  const { data: instruments = [] } = useQuery<any[]>({
     queryKey: ["instruments"],
     queryFn: async () => {
       const { data, error } = await supabase.from("instruments").select("*").order("name");
@@ -33,10 +33,19 @@ export default function Estoque() {
     },
   });
 
-  const instrumentsByStatus = instruments.reduce((acc: Record<string, number>, i) => {
-    acc[i.status] = (acc[i.status] || 0) + 1;
+  const computersInUse = computers.filter((c) => c.in_use).length;
+  const computersAvailable = computers.filter((c) => !c.in_use).length;
+
+  const instrumentsByStatus = instruments.reduce<Record<string, number>>((acc, instrument) => {
+    const status = instrument.status || "desconhecido";
+    acc[status] = (acc[status] ?? 0) + 1;
     return acc;
-  }, {});
+  }, {
+    disponivel: 0,
+    em_uso: 0,
+    emprestado: 0,
+    manutencao: 0,
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -49,7 +58,29 @@ export default function Estoque() {
               <Monitor className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-2xl font-bold">{computers.length}</p>
-                <p className="text-sm text-muted-foreground">Computadores</p>
+                <p className="text-sm text-muted-foreground">Equipamentos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="stat-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Monitor className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-2xl font-bold">{computersAvailable}</p>
+                <p className="text-sm text-muted-foreground">Disponíveis</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="stat-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Monitor className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-2xl font-bold">{computersInUse}</p>
+                <p className="text-sm text-muted-foreground">Em Uso</p>
               </div>
             </div>
           </CardContent>
@@ -78,9 +109,9 @@ export default function Estoque() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold flex items-center gap-2"><Monitor className="h-5 w-5" /> Computadores</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2"><Monitor className="h-5 w-5" /> Equipamentos</h2>
         {computers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhum computador cadastrado.</p>
+          <p className="text-sm text-muted-foreground">Nenhum equipamento cadastrado.</p>
         ) : (
           <div className="glass-card rounded-xl overflow-hidden">
             <Table>

@@ -27,7 +27,7 @@ const menuGroups = [
     label: "Infraestrutura",
     items: [
       { name: "Prédios / Sedes", href: "/predios", icon: Building2 },
-      { name: "Computadores", href: "/computadores", icon: Monitor },
+      { name: "Equipamentos", href: "/computadores", icon: Monitor },
       { name: "Manutenções", href: "/manutencoes", icon: Wrench },
     ],
   },

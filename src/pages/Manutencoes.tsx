@@ -12,17 +12,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 export default function Manutencoes() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedComputerIds, setSelectedComputerIds] = useState<string[]>([]);
   const [form, setForm] = useState({
-    computer_id: "", last_maintenance: "", next_maintenance: "", notes: "",
+    last_maintenance: "", next_maintenance: "", notes: "",
   });
 
   const { data: records = [], isLoading } = useQuery({
@@ -43,27 +46,57 @@ export default function Manutencoes() {
     },
   });
 
+  const toggleComputerSelection = async (computerId: string) => {
+    setSelectedComputerIds(prev => {
+      const isSelected = prev.includes(computerId);
+      return isSelected ? prev.filter(id => id !== computerId) : [...prev, computerId];
+    });
+
+    // Buscar última manutenção do computador se for seleção única
+    if (!selectedComputerIds.includes(computerId)) {
+      const { data } = await supabase
+        .from("maintenance_records")
+        .select("last_maintenance")
+        .eq("computer_id", computerId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      
+      if (data && data[0]?.last_maintenance) {
+        const lastDate = new Date(data[0].last_maintenance).toISOString().split('T')[0];
+        setForm(f => ({ ...f, last_maintenance: lastDate }));
+      }
+    }
+  };
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = {
-        computer_id: form.computer_id || null,
-        last_maintenance: form.last_maintenance || null,
-        next_maintenance: form.next_maintenance || null,
-        notes: form.notes || null,
-      };
       if (editingId) {
+        // Editar registro único
+        const payload = {
+          last_maintenance: form.last_maintenance || null,
+          next_maintenance: form.next_maintenance || null,
+          notes: form.notes || null,
+        };
         const { error } = await supabase.from("maintenance_records").update(payload).eq("id", editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("maintenance_records").insert(payload);
+        // Criar múltiplos registros
+        const computerIds = selectedComputerIds.length > 0 ? selectedComputerIds : [null];
+        const records = computerIds.map(computerId => ({
+          computer_id: computerId,
+          last_maintenance: form.last_maintenance || null,
+          next_maintenance: form.next_maintenance || null,
+          notes: form.notes || null,
+        }));
+        const { error } = await supabase.from("maintenance_records").insert(records);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["maintenance_records"] });
       setDialogOpen(false);
-      toast({ title: editingId ? "Manutenção atualizada!" : "Manutenção registrada!" });
+      const count = editingId ? 1 : selectedComputerIds.length;
+      toast({ title: editingId ? "Manutenção atualizada!" : `${count} manutenção(ções) registrada(s)!` });
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
@@ -83,14 +116,15 @@ export default function Manutencoes() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ computer_id: "", last_maintenance: "", next_maintenance: "", notes: "" });
+    setSelectedComputerIds([]);
+    setForm({ last_maintenance: "", next_maintenance: "", notes: "" });
     setDialogOpen(true);
   }
 
   function openEdit(r: any) {
     setEditingId(r.id);
+    setSelectedComputerIds([]);
     setForm({
-      computer_id: r.computer_id ?? "",
       last_maintenance: r.last_maintenance ?? "",
       next_maintenance: r.next_maintenance ?? "",
       notes: r.notes ?? "",
@@ -150,24 +184,39 @@ export default function Manutencoes() {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editingId ? "Editar Manutenção" : "Nova Manutenção"}</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-            <div className="space-y-2">
-              <Label>Computador</Label>
-              <Select value={form.computer_id} onValueChange={(v) => setField("computer_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
-                <SelectContent>
-                  {computers.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>{editingId ? "Editar Manutenção" : "Agendar Manutenção"}</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+            {!editingId && (
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Selecione os Equipamentos</Label>
+                <div className="border rounded-lg p-4 max-h-[250px] overflow-y-auto space-y-2">
+                  {computers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum equipamento cadastrado</p>
+                  ) : (
+                    computers.map((c) => (
+                      <div key={c.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={c.id}
+                          checked={selectedComputerIds.includes(c.id)}
+                          onCheckedChange={() => toggleComputerSelection(c.id)}
+                        />
+                        <Label htmlFor={c.id} className="font-normal cursor-pointer">{c.name}</Label>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Última Manutenção</Label><Input type="date" value={form.last_maintenance} onChange={(e) => setField("last_maintenance", e.target.value)} /></div>
               <div className="space-y-2"><Label>Próxima Manutenção</Label><Input type="date" value={form.next_maintenance} onChange={(e) => setField("next_maintenance", e.target.value)} /></div>
             </div>
-            <div className="space-y-2"><Label>Observações</Label><Textarea value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="Descreva o que foi realizado..." /></div>
-            <DialogFooter><Button type="submit" disabled={save.isPending}>{save.isPending ? "Salvando..." : "Salvar"}</Button></DialogFooter>
+            
+            <div className="space-y-2"><Label>Observações</Label><Textarea value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="Descreva o que foi realizado..." className="min-h-[100px]" /></div>
+            
+            <DialogFooter><Button type="submit" disabled={save.isPending || (!editingId && selectedComputerIds.length === 0)}>{save.isPending ? "Salvando..." : (editingId ? "Atualizar" : "Registrar")}</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

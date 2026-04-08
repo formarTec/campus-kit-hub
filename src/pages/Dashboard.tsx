@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 
 const quickActions = [
-  { label: "Novo Computador", icon: Monitor, href: "/computadores", color: "bg-primary/10 text-primary" },
+  { label: "Novo Equipamento", icon: Monitor, href: "/computadores", color: "bg-primary/10 text-primary" },
   { label: "Nova Licença", icon: Key, href: "/licencas", color: "bg-accent/10 text-accent" },
   { label: "Novo Prédio", icon: Building2, href: "/predios", color: "bg-info/10 text-info" },
   { label: "Nova Manutenção", icon: Wrench, href: "/manutencoes", color: "bg-warning/10 text-warning" },
@@ -57,7 +57,7 @@ export default function Dashboard() {
   });
 
   const stats = [
-    { label: "Computadores", value: computerCount, icon: Monitor, href: "/computadores", color: "text-primary", bg: "bg-primary/10" },
+    { label: "Equipamentos", value: computerCount, icon: Monitor, href: "/computadores", color: "text-primary", bg: "bg-primary/10" },
     { label: "Licenças", value: licenseCount, icon: Key, href: "/licencas", color: "text-accent", bg: "bg-accent/10" },
     { label: "Instrumentos", value: instrumentCount, icon: Music, href: "/instrumentos", color: "text-warning", bg: "bg-warning/10" },
     { label: "Alunos", value: studentCount, icon: GraduationCap, href: "/alunos", color: "text-success", bg: "bg-success/10" },
